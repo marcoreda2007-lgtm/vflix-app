@@ -64,24 +64,25 @@ with st.sidebar:
     st.info("💡 Algoritma vflix menganalisis ribuan ulasan asli penonton untuk mencari film terbaik!")
 
 # --- 2. LOGIKA FILTERING ---
-# Mulai dengan data yang ada skor sentimennya
+# LOGIKA FILTERING DAN SORTING TOTAL
 filtered_df = df_movies.dropna(subset=['avg_predicted_sentiment'])
 
-# Terapin filter pencarian teks (kalau user ngetik sesuatu)
+# Filter kalau user ngetik di kolom pencarian
 if search_query:
     filtered_df = filtered_df[filtered_df['title'].str.contains(
         search_query, case=False, na=False)]
 
-# Terapin filter genre (kalau user gak milih "Semua Genre")
+# Filter berdasarkan genre yang dipilih
 if selected_genre != "Semua Genre":
     filtered_df = filtered_df[filtered_df['genres'].str.contains(
         selected_genre, na=False)]
 
-# Urutkan berdasarkan sentimen dan jumlah review
+# Di sini kuncinya: hapus .head(5) biar semua film keluar
+# Urutan tetep dari sentimen tertinggi (best) ke terendah (worst)
 recommended_df = filtered_df.sort_values(
     by=['avg_predicted_sentiment', 'num_reviews_analyzed'],
     ascending=[False, False]
-).head(5)
+)
 
 # --- 3. NAMPILIN HASIL (DENGAN POSTER) ---
 if recommended_df.empty:
