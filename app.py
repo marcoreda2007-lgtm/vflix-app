@@ -39,7 +39,8 @@ selected_genre = st.selectbox("Pilih Genre Pilihanmu:", genres)
 # Tombol Eksekusi
 if st.button("Cari Film"):
     # 1. Bersihin dulu film yang skor sentimennya kosong (NaN) biar sistem gak bingung
-    filtered_df = filtered_df.dropna(subset=['avg_predicted_sentiment'])
+    filtered_df = df_movies[df_movies['genre'] == selected_genre].dropna(
+        subset=['avg_predicted_sentiment'])
 
     # 2. Sortir Ganda: Urutkan dari Sentimen tertinggi, lalu adu jumlah review terbanyak
     recommended_df = filtered_df.sort_values(
