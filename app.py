@@ -3,7 +3,7 @@ import pandas as pd
 import joblib
 
 # Bikin tampilan web jadi full width
-st.set_page_config(page_title="vflix", layout="wide")
+st.set_page_config(page_title="REDA FILM", layout="wide")
 
 hide_st_style = """
             <style>
@@ -38,7 +38,7 @@ df_movies = load_data()
 model, vectorizer = load_model()
 
 # --- HEADER UTAMA ---
-st.title("🍿 vflix")
+st.title("🍿 REDA FILM")
 st.markdown("Rekomendasi Film Cerdas Berdasarkan Sentimen Penonton")
 st.divider()
 
