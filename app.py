@@ -49,7 +49,7 @@ with st.sidebar:
     search_query = st.text_input(
         "Cari Judul Film:", placeholder="Ketik judul...")
 
-    # Ekstrak genre
+    # Ekstrak genre dinamis
     genre_lists = df_movies['genres'].dropna().str.split(',')
     unique_genres = set()
     for sublist in genre_lists:
@@ -59,10 +59,10 @@ with st.sidebar:
     genres_options = ["Semua Genre"] + sorted(list(unique_genres))
     selected_genre = st.selectbox("Pilih Genre:", genres_options)
 
-    # Fitur Baru: Pilihan Urutan (Best vs Worst)
     sort_option = st.selectbox("Urutkan Berdasarkan:", [
                                "Rating Tertinggi 🌟", "Rating Terburuk 🤢"])
 
+    st.divider()  # Sebagai pembatas di sidebar
     st.info("💡 Algoritma vflix menganalisis ulasan asli penonton. Berani nonton yang ratingnya merah?")
 
 # === 2. LOGIKA FILTERING & SORTING ===
@@ -76,31 +76,54 @@ if selected_genre != "Semua Genre":
     filtered_df = filtered_df[filtered_df['genres'].str.contains(
         selected_genre, na=False)]
 
-# Logika eksekusi Sorting yang membedakan Terbaik dan Terburuk
 if sort_option == "Rating Tertinggi 🌟":
-    # Urutkan sentimen dari 100% ke 0% (Terbaik ke Terburuk)
     recommended_df = filtered_df.sort_values(
         by=['avg_predicted_sentiment', 'num_reviews_analyzed'],
         ascending=[False, False]
     )
 else:
-    # Urutkan sentimen dari 0% ke 100% (Terburuk ke Terbaik)
-    # Catatan: num_reviews_analyzed tetep False biar yang muncul beneran film jelek yang divalidasi banyak orang, bukan cuma 1 orang haters.
     recommended_df = filtered_df.sort_values(
         by=['avg_predicted_sentiment', 'num_reviews_analyzed'],
         ascending=[True, False]
     )
 
-# --- 3. NAMPILIN HASIL (DENGAN POSTER) ---
-if recommended_df.empty:
+# === 3. FITUR BARU: LOGIKA PAGINATION (15 FILM PER HALAMAN) ===
+items_per_page = 15
+total_films = len(recommended_df)
+
+# Hitung total halaman yang dibutuhkan
+if total_films > 0:
+    total_pages = (total_films + items_per_page - 1) // items_per_page
+else:
+    total_pages = 1
+
+# Tambahkan input angka halaman di bagian bawah sidebar
+with st.sidebar:
+    st.write(f"Total data ditemukan: **{total_films}** film")
+    current_page = st.number_input(
+        f"Halaman (1 - {total_pages}):",
+        min_value=1,
+        max_value=total_pages,
+        value=1,
+        step=1
+    )
+
+# Potong data berdasarkan halaman yang aktif (Slicing data)
+start_idx = (current_page - 1) * items_per_page
+end_idx = start_idx + items_per_page
+page_df = recommended_df.iloc[start_idx:end_idx]
+
+
+# === 4. NAMPILIN HASIL (MENGGUNAKAN page_df BUKAN recommended_df) ===
+if page_df.empty:
     st.warning("Waduh, film yang lo cari belum ada nih.")
 else:
-    for index, row in recommended_df.iterrows():
-        # Bikin layout 2 kolom: Kiri buat Poster (ukuran 1), Kanan buat Detail (ukuran 3)
+    st.write(f"Menampilkan halaman **{current_page}** dari **{total_pages}**")
+
+    for index, row in page_df.iterrows():
         col_poster, col_detail = st.columns([1, 3])
 
         with col_poster:
-            # Ambil link poster dari TMDB. Kalau kosong, tampilin gambar default
             if pd.notna(row['poster_path']):
                 poster_url = f"https://image.tmdb.org/t/p/w500{row['poster_path']}"
                 st.image(poster_url, use_container_width=True)
@@ -109,13 +132,10 @@ else:
                     "https://via.placeholder.com/500x750?text=No+Poster", use_container_width=True)
 
         with col_detail:
-            # Judul Film
             st.subheader(f"{row['title']}")
 
-            # Hitung persentase sentimen
             score_pct = int(row['avg_predicted_sentiment'] * 100)
 
-            # Layout metrik skor (sejajar)
             m1, m2 = st.columns(2)
             with m1:
                 st.metric("Skor Sentimen", f"{score_pct}%")
@@ -123,10 +143,8 @@ else:
                 st.metric("Total Ulasan",
                           f"{int(row['num_reviews_analyzed'])} Review")
 
-            # Progress bar visual
             st.progress(row['avg_predicted_sentiment'])
 
-            # Sinopsis
             st.caption("SINOPSIS")
             st.write(row['overview'])
 
