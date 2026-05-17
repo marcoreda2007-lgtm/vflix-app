@@ -33,8 +33,25 @@ st.title("🍿 vflix: Rekomendasi Film Cerdas")
 st.write("Temukan tontonan seru berdasarkan sentimen asli ulasan penonton!")
 
 # Dropdown Filter
-genres = ["Action", "Drama", "Comedy", "Sci-Fi", "Romance", "Horror"]
-selected_genre = st.selectbox("Pilih Genre Pilihanmu:", genres)
+# 1. Ekstrak semua genre unik dari dataset secara otomatis
+if 'genres' in df_movies.columns:
+    # Ambil kolom genres, buang yang kosong, lalu split berdasarkan koma
+    genre_lists = df_movies['genres'].dropna().str.split(',')
+
+    # Pakai 'set' biar nama genre yang duplikat otomatis ke-filter
+    unique_genres = set()
+    for sublist in genre_lists:
+        for g in sublist:
+            unique_genres.add(g.strip())  # .strip() buat ilangin spasi gaib
+
+    # Urutkan sesuai abjad A-Z biar rapi pas dilihat user
+    genres_options = sorted(list(unique_genres))
+else:
+    # Jaga-jaga kalau kolomnya mendadak ilang
+    genres_options = ["Action", "Drama", "Comedy"]
+
+# 2. Masukin list dinamis tadi ke dropdown Streamlit
+selected_genre = st.selectbox("Pilih Genre Pilihanmu:", genres_options)
 
 # Tombol Eksekusi
 if st.button("Cari Film"):
