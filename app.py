@@ -70,9 +70,40 @@ if st.button("Cari Film"):
         st.warning("Waduh, belum ada film di genre ini nih.")
     else:
         st.success(f"Top rekomendasi {selected_genre} buat kamu!")
+
         for index, row in recommended_df.iterrows():
-            st.subheader(row['title'])
-            st.write(
-                f"⭐ Skor Sentimen: {row['avg_predicted_sentiment']} (Berdasarkan {row['num_reviews_analyzed']} ulasan)")
-            st.write(row['overview'])
+            # 1. Konversi float ke persentase biar lebih mudah dipahami
+            score_pct = int(row['avg_predicted_sentiment'] * 100)
+
+            # 2. Bikin klasifikasi label & emoji penanda yang eye-catching
+            if score_pct >= 90:
+                status_label = "🔥 Tontonan Wajib! (Sangat Positif)"
+            elif score_pct >= 75:
+                status_label = "🍿 Recommended (Banyak Respon Bagus)"
+            elif score_pct >= 50:
+                status_label = "🤔 Lumayan (Sentimen Campuran)"
+            else:
+                status_label = "📉 Kurang Greget (Sentimen Negatif)"
+
+            # 3. Cetak Judul Film dengan ukuran subheader yang pas
+            st.subheader(f"🎬 {row['title']}")
+
+            # 4. Gunakan layout kolom biar tampilan informasi sejajar rapi
+            col_metric, col_progress = st.columns([1, 2])
+
+            with col_metric:
+                # Nampilin angka persentase besar ala dashboard profesional
+                st.metric(label="Sentimen Positif", value=f"{score_pct}%")
+
+            with col_progress:
+                st.write(f"**Status Komunitas:** {status_label}")
+                # Nampilin progress bar visual biar kelihatan bergerak indikatornya
+                st.progress(row['avg_predicted_sentiment'])
+                st.caption(
+                    f"Dianalisis dari {int(row['num_reviews_analyzed'])} ulasan penonton asli.")
+
+            # 5. Tampilkan sinopsis film
+            st.write(f"**Sinopsis:** {row['overview']}")
+
+            # Pembatas antar film biar gak numpuk
             st.divider()
