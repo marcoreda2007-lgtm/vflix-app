@@ -90,6 +90,7 @@ else:
         by=['avg_predicted_sentiment', 'num_reviews_analyzed'],
         ascending=[True, False]
     )
+
 # --- 3. NAMPILIN HASIL (DENGAN POSTER) ---
 if recommended_df.empty:
     st.warning("Waduh, film yang lo cari belum ada nih.")
