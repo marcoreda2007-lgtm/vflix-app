@@ -42,48 +42,54 @@ st.title("🍿 vflix")
 st.markdown("Rekomendasi Film Cerdas Berdasarkan Sentimen Penonton")
 st.divider()
 
-# --- 1. SIDEBAR (PANEL SAMPING) ---
+# === 1. SIDEBAR (PANEL SAMPING) ===
 with st.sidebar:
     st.header("🔍 Filter & Cari")
 
-    # Fitur Baru: Search Bar
     search_query = st.text_input(
         "Cari Judul Film:", placeholder="Ketik judul...")
 
-    # Ekstrak genre dinamis (kayak sebelumnya)
+    # Ekstrak genre
     genre_lists = df_movies['genres'].dropna().str.split(',')
     unique_genres = set()
     for sublist in genre_lists:
         for g in sublist:
             unique_genres.add(g.strip())
 
-    # Tambahin opsi "Semua Genre" di paling atas
     genres_options = ["Semua Genre"] + sorted(list(unique_genres))
     selected_genre = st.selectbox("Pilih Genre:", genres_options)
 
-    st.info("💡 Algoritma vflix menganalisis ribuan ulasan asli penonton untuk mencari film terbaik!")
+    # Fitur Baru: Pilihan Urutan (Best vs Worst)
+    sort_option = st.selectbox("Urutkan Berdasarkan:", [
+                               "Rating Tertinggi 🌟", "Rating Terburuk 🤢"])
 
-# --- 2. LOGIKA FILTERING ---
-# LOGIKA FILTERING DAN SORTING TOTAL
+    st.info("💡 Algoritma vflix menganalisis ulasan asli penonton. Berani nonton yang ratingnya merah?")
+
+# === 2. LOGIKA FILTERING & SORTING ===
 filtered_df = df_movies.dropna(subset=['avg_predicted_sentiment'])
 
-# Filter kalau user ngetik di kolom pencarian
 if search_query:
     filtered_df = filtered_df[filtered_df['title'].str.contains(
         search_query, case=False, na=False)]
 
-# Filter berdasarkan genre yang dipilih
 if selected_genre != "Semua Genre":
     filtered_df = filtered_df[filtered_df['genres'].str.contains(
         selected_genre, na=False)]
 
-# Di sini kuncinya: hapus .head(5) biar semua film keluar
-# Urutan tetep dari sentimen tertinggi (best) ke terendah (worst)
-recommended_df = filtered_df.sort_values(
-    by=['avg_predicted_sentiment', 'num_reviews_analyzed'],
-    ascending=[False, False]
-)
-
+# Logika eksekusi Sorting yang membedakan Terbaik dan Terburuk
+if sort_option == "Rating Tertinggi 🌟":
+    # Urutkan sentimen dari 100% ke 0% (Terbaik ke Terburuk)
+    recommended_df = filtered_df.sort_values(
+        by=['avg_predicted_sentiment', 'num_reviews_analyzed'],
+        ascending=[False, False]
+    )
+else:
+    # Urutkan sentimen dari 0% ke 100% (Terburuk ke Terbaik)
+    # Catatan: num_reviews_analyzed tetep False biar yang muncul beneran film jelek yang divalidasi banyak orang, bukan cuma 1 orang haters.
+    recommended_df = filtered_df.sort_values(
+        by=['avg_predicted_sentiment', 'num_reviews_analyzed'],
+        ascending=[True, False]
+    )
 # --- 3. NAMPILIN HASIL (DENGAN POSTER) ---
 if recommended_df.empty:
     st.warning("Waduh, film yang lo cari belum ada nih.")
