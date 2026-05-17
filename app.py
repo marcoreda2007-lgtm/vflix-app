@@ -44,7 +44,7 @@ if st.button("Cari Film"):
 
     # Ambil 5 film dengan sentimen tertinggi
     recommended_df = filtered_df.sort_values(
-        by='average_sentiment', ascending=False).head(5)
+        by='avg_predicted_sentiment', ascending=False).head(5)
 
     if recommended_df.empty:
         st.warning("Waduh, belum ada film di genre ini nih.")
@@ -52,6 +52,6 @@ if st.button("Cari Film"):
         st.success(f"Top rekomendasi {selected_genre} buat kamu!")
         for index, row in recommended_df.iterrows():
             st.subheader(row['title'])
-            st.write(f"⭐ Skor Sentimen: {row['average_sentiment']}")
+            st.write(f"⭐ Skor Sentimen: {row['avg_predicted_sentiment']}")
             st.write(row['overview'])
             st.divider()
