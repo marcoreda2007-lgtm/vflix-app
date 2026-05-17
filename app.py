@@ -24,7 +24,7 @@ def load_model():
 df_movies = load_data()
 
 # Tambahin baris ini buat ngintip kolom
-st.write("Daftar Kolom di CSV:", df_movies.columns.tolist())
+# st.write("Daftar Kolom di CSV:", df_movies.columns.tolist())
 
 model, vectorizer = load_model()
 
