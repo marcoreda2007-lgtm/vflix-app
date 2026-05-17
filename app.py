@@ -38,13 +38,14 @@ selected_genre = st.selectbox("Pilih Genre Pilihanmu:", genres)
 
 # Tombol Eksekusi
 if st.button("Cari Film"):
-    # Filter data berdasarkan genre yang dipilih
-    filtered_df = df_movies[df_movies['genres'].str.contains(
-        selected_genre, na=False)]
+    # 1. Bersihin dulu film yang skor sentimennya kosong (NaN) biar sistem gak bingung
+    filtered_df = filtered_df.dropna(subset=['avg_predicted_sentiment'])
 
-    # Ambil 5 film dengan sentimen tertinggi
+    # 2. Sortir Ganda: Urutkan dari Sentimen tertinggi, lalu adu jumlah review terbanyak
     recommended_df = filtered_df.sort_values(
-        by='avg_predicted_sentiment', ascending=False).head(5)
+        by=['avg_predicted_sentiment', 'num_reviews_analyzed'],
+        ascending=[False, False]
+    ).head(5)
 
     if recommended_df.empty:
         st.warning("Waduh, belum ada film di genre ini nih.")
@@ -52,6 +53,7 @@ if st.button("Cari Film"):
         st.success(f"Top rekomendasi {selected_genre} buat kamu!")
         for index, row in recommended_df.iterrows():
             st.subheader(row['title'])
-            st.write(f"⭐ Skor Sentimen: {row['avg_predicted_sentiment']}")
+            st.write(
+                f"⭐ Skor Sentimen: {row['avg_predicted_sentiment']} (Berdasarkan {row['num_reviews_analyzed']} ulasan)")
             st.write(row['overview'])
             st.divider()
