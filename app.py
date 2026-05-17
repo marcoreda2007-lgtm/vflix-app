@@ -10,8 +10,8 @@ st.set_page_config(page_title="vflix", layout="wide")
 
 @st.cache_data
 def load_data():
-    # Sesuaikan dengan nama file dataset kamu
-    return pd.read_csv('data/movies.csv', engine='python', on_bad_lines='skip')
+    # Pastiin nama filenya bener: movies_scored_final.csv
+    return pd.read_csv('data/movies_scored_final.csv', engine='python', on_bad_lines='skip')
 
 
 @st.cache_resource
