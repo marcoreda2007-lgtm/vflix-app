@@ -5,6 +5,15 @@ import joblib
 # Bikin tampilan web jadi full width
 st.set_page_config(page_title="vflix", layout="wide")
 
+hide_st_style = """
+            <style>
+            #MainMenu {visibility: hidden;}
+            footer {visibility: hidden;}
+            header {visibility: hidden;}
+            </style>
+            """
+st.markdown(hide_st_style, unsafe_allow_html=True)
+
 # Fungsi load data biar webnya ngebut pake cache
 
 
@@ -28,9 +37,92 @@ df_movies = load_data()
 
 model, vectorizer = load_model()
 
-# Header Web
-st.title("🍿 vflix: Rekomendasi Film Cerdas")
-st.write("Temukan tontonan seru berdasarkan sentimen asli ulasan penonton!")
+# --- HEADER UTAMA ---
+st.title("🍿 vflix")
+st.markdown("Rekomendasi Film Cerdas Berdasarkan Sentimen Penonton")
+st.divider()
+
+# --- 1. SIDEBAR (PANEL SAMPING) ---
+with st.sidebar:
+    st.header("🔍 Filter & Cari")
+
+    # Fitur Baru: Search Bar
+    search_query = st.text_input(
+        "Cari Judul Film:", placeholder="Ketik judul...")
+
+    # Ekstrak genre dinamis (kayak sebelumnya)
+    genre_lists = df_movies['genres'].dropna().str.split(',')
+    unique_genres = set()
+    for sublist in genre_lists:
+        for g in sublist:
+            unique_genres.add(g.strip())
+
+    # Tambahin opsi "Semua Genre" di paling atas
+    genres_options = ["Semua Genre"] + sorted(list(unique_genres))
+    selected_genre = st.selectbox("Pilih Genre:", genres_options)
+
+    st.info("💡 Algoritma vflix menganalisis ribuan ulasan asli penonton untuk mencari film terbaik!")
+
+# --- 2. LOGIKA FILTERING ---
+# Mulai dengan data yang ada skor sentimennya
+filtered_df = df_movies.dropna(subset=['avg_predicted_sentiment'])
+
+# Terapin filter pencarian teks (kalau user ngetik sesuatu)
+if search_query:
+    filtered_df = filtered_df[filtered_df['title'].str.contains(
+        search_query, case=False, na=False)]
+
+# Terapin filter genre (kalau user gak milih "Semua Genre")
+if selected_genre != "Semua Genre":
+    filtered_df = filtered_df[filtered_df['genres'].str.contains(
+        selected_genre, na=False)]
+
+# Urutkan berdasarkan sentimen dan jumlah review
+recommended_df = filtered_df.sort_values(
+    by=['avg_predicted_sentiment', 'num_reviews_analyzed'],
+    ascending=[False, False]
+).head(5)
+
+# --- 3. NAMPILIN HASIL (DENGAN POSTER) ---
+if recommended_df.empty:
+    st.warning("Waduh, film yang lo cari belum ada nih.")
+else:
+    for index, row in recommended_df.iterrows():
+        # Bikin layout 2 kolom: Kiri buat Poster (ukuran 1), Kanan buat Detail (ukuran 3)
+        col_poster, col_detail = st.columns([1, 3])
+
+        with col_poster:
+            # Ambil link poster dari TMDB. Kalau kosong, tampilin gambar default
+            if pd.notna(row['poster_path']):
+                poster_url = f"https://image.tmdb.org/t/p/w500{row['poster_path']}"
+                st.image(poster_url, use_container_width=True)
+            else:
+                st.image(
+                    "https://via.placeholder.com/500x750?text=No+Poster", use_container_width=True)
+
+        with col_detail:
+            # Judul Film
+            st.subheader(f"{row['title']}")
+
+            # Hitung persentase sentimen
+            score_pct = int(row['avg_predicted_sentiment'] * 100)
+
+            # Layout metrik skor (sejajar)
+            m1, m2 = st.columns(2)
+            with m1:
+                st.metric("Skor Sentimen", f"{score_pct}%")
+            with m2:
+                st.metric("Total Ulasan",
+                          f"{int(row['num_reviews_analyzed'])} Review")
+
+            # Progress bar visual
+            st.progress(row['avg_predicted_sentiment'])
+
+            # Sinopsis
+            st.caption("SINOPSIS")
+            st.write(row['overview'])
+
+        st.divider()
 
 # Dropdown Filter
 # 1. Ekstrak semua genre unik dari dataset secara otomatis
