@@ -190,12 +190,6 @@ with tab_katalog:
                     # Ambil ulasan baris pertama sebagai highlight
                     highlight_review = movie_reviews.iloc[0]
 
-                    # Kasih ikon sesuai sentimennya
-                    if highlight_review['predicted_sentiment'] == 1:
-                        sentimen_teks = "Very positive 😍"
-                    else:
-                        sentimen_teks = "Mixed feelings 🤔"
-
                     # Tampilkan dalam kotak info (mirip screenshot lo)
                     st.info(
                         f"*{highlight_review['review_text']}* \n\n**AI Sentimen:** {sentimen_teks}")
