@@ -109,7 +109,7 @@ with tab_ai:
                 "Ketik dulu ceritanya dong bro, masa AI-nya disuruh nebak pikiran kosong!")
 
 # --- HEADER UTAMA ---
-st.title("🍿 REDa Film")
+st.title("🍿 VFLIX-APP")
 st.markdown("Rekomendasi Film Cerdas Berdasarkan Sentimen Penonton")
 st.divider()
 
