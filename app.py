@@ -4,7 +4,7 @@ import joblib
 from sklearn.metrics.pairwise import cosine_similarity
 
 # 1. SETTING HALAMAN & STYLE PREMIUM (Hacking CSS Streamlit)
-st.set_page_config(page_title="vflix", layout="wide", page_icon="🍿")
+st.set_page_config(page_title="vflix-app", layout="wide", page_icon="🍿")
 
 # Menyembunyikan elemen default Streamlit biar UI kerasa clean & native
 hide_st_style = """
@@ -42,7 +42,7 @@ tfidf_vec, tfidf_mat = load_ai_models()
 # ==========================================
 # 3. HEADER UTAMA APLIKASI
 # ==========================================
-st.title("🍿 vflix")
+st.title("🍿 VFLIX-APP")
 st.markdown(
     "### Platform Rekomendasi & Penjelajah Film Berbasis AI Sentiment Analysis")
 st.divider()
@@ -52,17 +52,17 @@ st.divider()
 # 4. IMPLEMENTASI TABS UTAMA (UI/UX FIX)
 # ==========================================
 tab_katalog, tab_ai = st.tabs(
-    ["📚 Katalog Eksplorasi", "🧠 AI Recommender (Interaktif)"])
+    ["Explore", "Search with AI"])
 
 # ------------------------------------------
 # TAB 1: KATALOG FILM (Fungsi Cari, Filter, & Pagination)
 # ------------------------------------------
 with tab_katalog:
-    st.subheader("Daftar Koleksi Film Dunia")
+    st.subheader("Movie List ")
 
     # Komponen Kontrol ditaruh di Sidebar khusus untuk Tab Katalog
     with st.sidebar:
-        st.header("🔍 Kontrol Navigasi")
+        st.header("Search & Filter")
         search_query = st.text_input(
             "Cari Judul Film:", placeholder="Ketik judul di sini...")
 
@@ -74,10 +74,10 @@ with tab_katalog:
                 unique_genres.add(g.strip())
 
         genres_options = ["Semua Genre"] + sorted(list(unique_genres))
-        selected_genre = st.selectbox("Pilih Alur Genre:", genres_options)
+        selected_genre = st.selectbox("Pilih Genre:", genres_options)
 
         sort_option = st.selectbox("Urutkan Berdasarkan:", [
-                                   "Rating Tertinggi 🌟", "Rating Terburuk 🤢"])
+                                   "Rating Tertinggi", "Rating Terburuk"])
         st.divider()
 
     # Eksekusi Logika Filtering Data
@@ -92,7 +92,7 @@ with tab_katalog:
             selected_genre, na=False)]
 
     # Eksekusi Logika Sorting Data
-    if sort_option == "Rating Tertinggi 🌟":
+    if sort_option == "Rating Tertinggi":
         recommended_df = filtered_df.sort_values(
             by=['avg_predicted_sentiment', 'num_reviews_analyzed'], ascending=[False, False])
     else:
@@ -118,7 +118,7 @@ with tab_katalog:
     # Render Tampilan List Film Katalog
     if page_df.empty:
         st.warning(
-            "Waduh, kriteria film yang lo cari gak ketemu di database nih bro.")
+            "Film yang kamu cari tidak ditemukan. Coba ubah kata kunci pencarian atau filter genrenya ya!")
     else:
         st.write(
             f"Menampilkan urutan film halaman **{current_page}** dari total **{total_pages}**")
@@ -147,21 +147,21 @@ with tab_katalog:
 
                 # Penentuan Status Label Sentimen
                 if score_pct >= 90:
-                    status_label = "🔥 Tontonan Wajib! (Sangat Positif)"
+                    status_label = "🔥 Wajib nonton! (Sangat Positif)"
                 elif score_pct >= 75:
                     status_label = "🍿 Recommended (Banyak Respon Bagus)"
                 elif score_pct >= 50:
                     status_label = "🤔 Lumayan (Sentimen Campuran)"
                 else:
-                    status_label = "📉 Kurang Greget (Sentimen Negatif)"
+                    status_label = "📉 Kurang Bagus (Sentimen Negatif)"
 
                 # Tampilan Grid Metrik Skor
                 m1, m2, m3 = st.columns(3)
                 with m1:
-                    st.metric("Skor Komunitas", f"{score_pct}%")
+                    st.metric("Community Score", f"{score_pct}%")
                 with m2:
-                    st.metric("Volume Ulasan",
-                              f"{int(row['num_reviews_analyzed'])} Review")
+                    st.metric("Volume Reviews",
+                              f"{int(row['num_reviews_analyzed'])} Reviews")
                 with m3:
                     st.write(f"**Status Vibe:** \n\n {status_label}")
 
@@ -176,8 +176,8 @@ with tab_katalog:
 # TAB 2: AI RECOMMENDER (Fitur Real-Time Interaktif)
 # ------------------------------------------
 with tab_ai:
-    st.subheader("Curhatin Kriteria Vibe Film Impian Lo")
-    st.write("Ketik plot, suasana, atau review model film yang lagi lo pinginin. Mesin Cosine Similarity AI bakal langsung menganalisis teks lo dan mencari kecocokan sinopsis paling akurat secara *real-time*!")
+    st.subheader("Tuliskan Vibe Film yang ingin anda tonton")
+    st.write("Ketik plot, suasana, atau review model film yang kamu ingin. AI bakal langsung mencari film yang kamu mau*!")
 
     user_text = st.text_area(
         "Ceritakan jalan cerita atau suasana filmnya di sini:",
@@ -200,7 +200,7 @@ with tab_ai:
             top_indices = sim_scores.argsort()[-5:][::-1]
 
             st.success(
-                "Boom! AI Berhasil Mencocokkan Data. Ini 5 rekomendasi teratas yang paling nyambung sama curhatan lo:")
+                "Ini 5 rekomendasi teratas yang paling sesuai sama yang kamu cari:")
             st.divider()
 
             for idx in top_indices:
@@ -240,4 +240,4 @@ with tab_ai:
                 st.divider()
         else:
             st.warning(
-                "Kolom curhatannya diisi dulu dong bro, AI-nya gak bisa baca pikiran kosong lo!")
+                "Kolom ini tidak bisa kosong ya! Coba tulis sedikit cerita atau suasana film yang kamu inginkan, biar AI bisa bantu cariin rekomendasi yang pas buat kamu!")
