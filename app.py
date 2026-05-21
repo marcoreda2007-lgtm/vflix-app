@@ -1,12 +1,12 @@
 import streamlit as st
 import pandas as pd
 import joblib
+import requests
 from sklearn.metrics.pairwise import cosine_similarity
 
-# 1. SETTING HALAMAN & STYLE PREMIUM (Hacking CSS Streamlit)
+# 1. SETTING HALAMAN & STYLE PREMIUM
 st.set_page_config(page_title="vflix-app", layout="wide", page_icon="🍿")
 
-# Menyembunyikan elemen default Streamlit biar UI kerasa clean & native
 hide_st_style = """
             <style>
             #MainMenu {visibility: hidden;}
@@ -32,15 +32,72 @@ def load_review_data():
     return pd.read_csv('data/reviews_final.csv', engine='python', on_bad_lines='skip')
 
 
-df_movies = load_movie_data()
-df_reviews = load_review_data()  # Jangan lupa inisialisasi variabelnya
-
-
 @st.cache_resource
 def load_ai_models():
     tfidf_vec = joblib.load('models/tfidf_rekomendasi.pkl')
     tfidf_mat = joblib.load('models/tfidf_matrix.pkl')
     return tfidf_vec, tfidf_mat
+
+
+# ==========================================
+# FUNGSI TRAILER (TMDB API)
+# ==========================================
+TMDB_API_KEY = "acf085605ee44ecca3febf0323d40329"  # <-- ganti ini
+
+@st.cache_data(ttl=3600)
+def get_trailer_key(movie_id):
+    """
+    Fetch YouTube trailer key dari TMDB.
+    Return: string YouTube video key, atau None kalau tidak ada.
+    """
+    try:
+        url = f"https://api.themoviedb.org/3/movie/{movie_id}/videos"
+        params = {"api_key": TMDB_API_KEY, "language": "en-US"}
+        res = requests.get(url, params=params, timeout=5)
+        data = res.json()
+        for video in data.get("results", []):
+            if video.get("type") == "Trailer" and video.get("site") == "YouTube":
+                return video["key"]
+    except Exception:
+        pass
+    return None
+
+
+def render_trailer_section(movie_id, unique_key):
+    """
+    Tampilkan tombol trailer. Kalau diklik → embed YouTube muncul di bawahnya.
+    unique_key: string unik per film supaya session_state tidak bentrok.
+    """
+    state_key = f"show_trailer_{unique_key}"
+
+    # Inisialisasi state
+    if state_key not in st.session_state:
+        st.session_state[state_key] = False
+
+    # Tombol toggle
+    btn_label = "⏹️ Tutup Trailer" if st.session_state[state_key] else "▶️ Tonton Trailer"
+    if st.button(btn_label, key=f"btn_{unique_key}"):
+        st.session_state[state_key] = not st.session_state[state_key]
+
+    # Embed trailer kalau state aktif
+    if st.session_state[state_key]:
+        trailer_key = get_trailer_key(movie_id)
+        if trailer_key:
+            embed_html = f"""
+            <div style="margin-top:10px; border-radius:12px; overflow:hidden;">
+                <iframe
+                    width="100%"
+                    height="315"
+                    src="https://www.youtube.com/embed/{trailer_key}?autoplay=1&rel=0"
+                    frameborder="0"
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowfullscreen>
+                </iframe>
+            </div>
+            """
+            st.markdown(embed_html, unsafe_allow_html=True)
+        else:
+            st.warning("Trailer tidak tersedia untuk film ini.")
 
 
 # Inisialisasi data dan model
@@ -59,24 +116,21 @@ st.divider()
 
 
 # ==========================================
-# 4. IMPLEMENTASI TABS UTAMA (UI/UX FIX)
+# 4. IMPLEMENTASI TABS UTAMA
 # ==========================================
-tab_katalog, tab_ai = st.tabs(
-    ["Explore", "Search with AI"])
+tab_katalog, tab_ai = st.tabs(["Explore", "Search with AI"])
 
 # ------------------------------------------
-# TAB 1: KATALOG FILM (Fungsi Cari, Filter, & Pagination)
+# TAB 1: KATALOG FILM
 # ------------------------------------------
 with tab_katalog:
     st.subheader("Movie List ")
 
-    # Komponen Kontrol ditaruh di Sidebar khusus untuk Tab Katalog
     with st.sidebar:
         st.header("Search & Filter")
         search_query = st.text_input(
             "Cari Judul Film:", placeholder="Ketik judul di sini...")
 
-        # Ekstrak list genre secara dinamis dari database
         genre_lists = df_movies['genres'].dropna().str.split(',')
         unique_genres = set()
         for sublist in genre_lists:
@@ -90,7 +144,6 @@ with tab_katalog:
                                    "Rating Tertinggi", "Rating Terburuk"])
         st.divider()
 
-    # Eksekusi Logika Filtering Data
     filtered_df = df_movies.dropna(subset=['avg_predicted_sentiment'])
 
     if search_query:
@@ -101,7 +154,6 @@ with tab_katalog:
         filtered_df = filtered_df[filtered_df['genres'].str.contains(
             selected_genre, na=False)]
 
-    # Eksekusi Logika Sorting Data
     if sort_option == "Rating Tertinggi":
         recommended_df = filtered_df.sort_values(
             by=['avg_predicted_sentiment', 'num_reviews_analyzed'], ascending=[False, False])
@@ -109,7 +161,6 @@ with tab_katalog:
         recommended_df = filtered_df.sort_values(
             by=['avg_predicted_sentiment', 'num_reviews_analyzed'], ascending=[True, False])
 
-    # Eksekusi Sistem Pembagi Halaman (Pagination)
     items_per_page = 15
     total_films = len(recommended_df)
     total_pages = max(1, (total_films + items_per_page - 1) // items_per_page)
@@ -120,12 +171,10 @@ with tab_katalog:
             f"Halaman (1 - {total_pages}):", min_value=1, max_value=total_pages, value=1, step=1)
         st.info("💡 Sistem otomatis membagi 15 data per halaman agar performa render aplikasi tetap ringan dan ngebut!")
 
-    # Pemotongan Indeks Data untuk Halaman Aktif
     start_idx = (current_page - 1) * items_per_page
     end_idx = start_idx + items_per_page
     page_df = recommended_df.iloc[start_idx:end_idx]
 
-    # Render Tampilan List Film Katalog
     if page_df.empty:
         st.warning(
             "Film yang kamu cari tidak ditemukan. Coba ubah kata kunci pencarian atau filter genrenya ya!")
@@ -148,14 +197,12 @@ with tab_katalog:
             with col_detail:
                 st.subheader(f"{row['title']}")
 
-                # Menampilkan sub-genre tepat di bawah judul dengan format estetik
                 if pd.notna(row['genres']):
                     clean_genres = row['genres'].replace(',', '  |  ')
                     st.markdown(f"🏷️ *{clean_genres}*")
 
                 score_pct = int(row['avg_predicted_sentiment'] * 100)
 
-                # Penentuan Status Label Sentimen
                 if score_pct >= 90:
                     status_label = "🔥 Wajib nonton! (Sangat Positif)"
                 elif score_pct >= 75:
@@ -165,7 +212,6 @@ with tab_katalog:
                 else:
                     status_label = "📉 Kurang Bagus (Sentimen Negatif)"
 
-                # Tampilan Grid Metrik Skor
                 m1, m2, m3 = st.columns(3)
                 with m1:
                     st.metric("Community Score", f"{score_pct}%")
@@ -179,35 +225,52 @@ with tab_katalog:
                 st.markdown("**Sinopsis Alur Cerita:**")
                 st.write(row['overview'])
 
-                # === TAMBAHAN FITUR HIGHLIGHT REVIEW ===
+                # === TRAILER SECTION ===
+                st.markdown("**🎬 Trailer Film:**")
+                render_trailer_section(row['id'], unique_key=f"katalog_{index}")
+
+                # === HIGHLIGHT REVIEW ===
                 st.markdown("<br>**💬 Highlight Ulasan Penonton:**",
                             unsafe_allow_html=True)
 
-                # Cari ulasan yang ID filmnya cocok
                 movie_reviews = df_reviews[df_reviews['movie_id'] == row['id']]
 
                 if not movie_reviews.empty:
-                    # Ambil ulasan baris pertama sebagai highlight
                     highlight_review = movie_reviews.iloc[0]
 
-                    # Kasih ikon sesuai sentimennya
                     if highlight_review['predicted_sentiment'] == 1:
                         sentimen_teks = "Very Positif 🔥"
                     else:
                         sentimen_teks = "Mixed feelings 🤔"
 
-                    # Tampilkan dalam kotak info (mirip screenshot lo)
                     st.info(
                         f"*{highlight_review['review_text']}* \n\n**AI Sentimen:** {sentimen_teks}")
+
+                # === VISUALISASI SENTIMEN REVIEW ===
+                st.markdown("**📊 Visualisasi Sentimen Review:**")
+
+                if not movie_reviews.empty:
+                    positif = movie_reviews[movie_reviews['predicted_sentiment'] == 1].shape[0]
+                    negatif = movie_reviews[movie_reviews['predicted_sentiment'] == 0].shape[0]
+
+                    sentiment_df = pd.DataFrame({
+                        "Sentimen": ["Positif", "Negatif/Mixed"],
+                        "Jumlah": [positif, negatif]
+                    })
+
+                    st.bar_chart(sentiment_df.set_index("Sentimen"))
+
+                    total_review = positif + negatif
+                    persen_positif = int((positif / total_review) * 100) if total_review > 0 else 0
+                    st.write(f"🔥 **{persen_positif}%** review untuk film ini bernada positif.")
                 else:
-                    st.caption("Belum ada ulasan yang terekam untuk film ini.")
-                # =======================================
+                    st.caption("Belum ada data sentimen review untuk divisualisasikan.")
 
                 st.divider()
 
 
 # ------------------------------------------
-# TAB 2: AI RECOMMENDER (Fitur Real-Time Interaktif)
+# TAB 2: AI RECOMMENDER
 # ------------------------------------------
 with tab_ai:
     st.subheader("Tuliskan Vibe Film yang ingin anda tonton")
@@ -224,17 +287,11 @@ with tab_ai:
 
     if st.button("Analisis Teks & Cari Rekomendasi AI", type="primary"):
         if user_text:
-            # Proses Vektorisasi Input User menggunakan TF-IDF Kamus Model
             user_vec = tfidf_vec.transform([user_text])
-
-            # Perhitungan kemiripan matematis dengan seluruh matriks metadata film
             sim_scores = cosine_similarity(user_vec, tfidf_mat).flatten()
-
-            # Filter mengambil 5 besar indeks film teratas dengan tingkat kemiripan tertinggi
             top_indices = sim_scores.argsort()[-5:][::-1]
 
-            st.success(
-                "Ini 5 rekomendasi teratas yang paling sesuai sama yang kamu cari:")
+            st.success("Ini 5 rekomendasi teratas yang paling sesuai sama yang kamu cari:")
             st.divider()
 
             for idx in top_indices:
@@ -264,12 +321,15 @@ with tab_ai:
                         st.markdown(f"🏷️ *{clean_genres}*")
 
                     st.write(f"**Analisis Relevansi:** {label_rating}")
-                    st.metric("Tingkat Kemiripan Cerita (AI Match)",
-                              f"{kecocokan}%")
+                    st.metric("Tingkat Kemiripan Cerita (AI Match)", f"{kecocokan}%")
                     st.progress(sim_scores[idx])
 
                     st.markdown("**Sinopsis Singkat:**")
                     st.write(row['overview'])
+
+                    # === TRAILER SECTION ===
+                    st.markdown("**🎬 Trailer Film:**")
+                    render_trailer_section(row['id'], unique_key=f"ai_{idx}")
 
                 st.divider()
         else:
