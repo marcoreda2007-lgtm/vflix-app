@@ -192,9 +192,9 @@ with tab_katalog:
 
                     # Kasih ikon sesuai sentimennya
                     if highlight_review['predicted_sentiment'] == 1:
-                        sentimen_teks = "Positif 🔥"
+                        sentimen_teks = "Very positive 😍"
                     else:
-                        sentimen_teks = "Negatif 🤢"
+                        sentimen_teks = "Mixed feelings 🤔"
 
                     # Tampilkan dalam kotak info (mirip screenshot lo)
                     st.info(
