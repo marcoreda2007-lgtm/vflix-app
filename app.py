@@ -27,6 +27,15 @@ def load_movie_data():
     return pd.read_csv('data/movies_scored_final.csv', engine='python', on_bad_lines='skip')
 
 
+@st.cache_data
+def load_review_data():
+    return pd.read_csv('data/reviews_final.csv', engine='python', on_bad_lines='skip')
+
+
+df_movies = load_movie_data()
+df_reviews = load_review_data()  # Jangan lupa inisialisasi variabelnya
+
+
 @st.cache_resource
 def load_ai_models():
     tfidf_vec = joblib.load('models/tfidf_rekomendasi.pkl')
@@ -36,6 +45,7 @@ def load_ai_models():
 
 # Inisialisasi data dan model
 df_movies = load_movie_data()
+df_reviews = load_review_data()
 tfidf_vec, tfidf_mat = load_ai_models()
 
 
@@ -169,7 +179,31 @@ with tab_katalog:
                 st.markdown("**Sinopsis Alur Cerita:**")
                 st.write(row['overview'])
 
-            st.divider()
+                # === TAMBAHAN FITUR HIGHLIGHT REVIEW ===
+                st.markdown("<br>**💬 Highlight Ulasan Penonton:**",
+                            unsafe_allow_html=True)
+
+                # Cari ulasan yang ID filmnya cocok
+                movie_reviews = df_reviews[df_reviews['movie_id'] == row['id']]
+
+                if not movie_reviews.empty:
+                    # Ambil ulasan baris pertama sebagai highlight
+                    highlight_review = movie_reviews.iloc[0]
+
+                    # Kasih ikon sesuai sentimennya
+                    if highlight_review['predicted_sentiment'] == 1:
+                        sentimen_teks = "Positif 🔥"
+                    else:
+                        sentimen_teks = "Negatif 🤢"
+
+                    # Tampilkan dalam kotak info (mirip screenshot lo)
+                    st.info(
+                        f"*{highlight_review['review_text']}* \n\n**AI Sentimen:** {sentimen_teks}")
+                else:
+                    st.caption("Belum ada ulasan yang terekam untuk film ini.")
+                # =======================================
+
+                st.divider()
 
 
 # ------------------------------------------
