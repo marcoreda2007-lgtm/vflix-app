@@ -179,7 +179,29 @@ with tab_katalog:
                 st.markdown("**Sinopsis Alur Cerita:**")
                 st.write(row['overview'])
 
-                # (AI sentiment highlight removed)
+                # === TAMBAHAN FITUR HIGHLIGHT REVIEW ===
+                st.markdown("<br>**💬 Highlight Ulasan Penonton:**",
+                            unsafe_allow_html=True)
+
+                # Cari ulasan yang ID filmnya cocok
+                movie_reviews = df_reviews[df_reviews['movie_id'] == row['id']]
+
+                if not movie_reviews.empty:
+                    # Ambil ulasan baris pertama sebagai highlight
+                    highlight_review = movie_reviews.iloc[0]
+
+                    # Kasih ikon sesuai sentimennya
+                    if highlight_review['predicted_sentiment'] == 1:
+                        sentimen_teks = "Very Positif 🔥"
+                    else:
+                        sentimen_teks = "Mixed feelings 🤔"
+
+                    # Tampilkan dalam kotak info (mirip screenshot lo)
+                    st.info(
+                        f"*{highlight_review['review_text']}* \n\n**AI Sentimen:** {sentimen_teks}")
+                else:
+                    st.caption("Belum ada ulasan yang terekam untuk film ini.")
+                # =======================================
 
                 st.divider()
 
