@@ -1,41 +1,112 @@
 import streamlit as st
 import pandas as pd
 import joblib
+from sklearn.metrics.pairwise import cosine_similarity
 
-# Bikin tampilan web jadi full width
-st.set_page_config(page_title="REDa Film", layout="wide")
+st.set_page_config(page_title="vflix", layout="wide")
 
-hide_st_style = """
-            <style>
-            #MainMenu {visibility: hidden;}
-            footer {visibility: hidden;}
-            header {visibility: hidden;}
-            </style>
-            """
-st.markdown(hide_st_style, unsafe_allow_html=True)
-
-# Fungsi load data biar webnya ngebut pake cache
+# ==========================================
+# 1. LOAD DATA DAN MODEL (SYSTEM BACKEND)
+# ==========================================
 
 
 @st.cache_data
-def load_data():
-    # Pastiin nama filenya bener: movies_scored_final.csv
+def load_movie_data():
     return pd.read_csv('data/movies_scored_final.csv', engine='python', on_bad_lines='skip')
 
 
 @st.cache_resource
-def load_model():
-    model = joblib.load('models/sentiment_model.pkl')
-    vectorizer = joblib.load('models/tfidf_vectorizer.pkl')
-    return model, vectorizer
+def load_ai_models():
+    # Load mesin pembaca teks dan peta koordinat film
+    tfidf_vec = joblib.load('models/tfidf_rekomendasi.pkl')
+    tfidf_mat = joblib.load('models/tfidf_matrix.pkl')
+    return tfidf_vec, tfidf_mat
 
 
-df_movies = load_data()
+df_movies = load_movie_data()
+tfidf_vec, tfidf_mat = load_ai_models()
 
-# Tambahin baris ini buat ngintip kolom
-# st.write("Daftar Kolom di CSV:", df_movies.columns.tolist())
+# ==========================================
+# 2. BIKIN TABS BIAR UI MAKIN PRO
+# ==========================================
+tab_katalog, tab_ai = st.tabs(
+    ["📚 Katalog Film", "🧠 AI Recommender (Interaktif)"])
 
-model, vectorizer = load_model()
+with tab_katalog:
+    # LO PASTE SEMUA KODINGAN UI LAMA LO DI SINI
+    # (Mulai dari bagian Sidebar sampai logika nampilin Poster yang sebelumnya)
+    st.write("Halaman katalog berjalan normal...")
+
+
+with tab_ai:
+    st.header("Ceritain Vibe Film yang Lo Mau!")
+    st.write("Cukup ketik *review* film yang barusan lo tonton, atau plot film yang lagi pengen lo tonton. AI vflix bakal nyariin kecocokannya secara *real-time*!")
+
+    # Form Input User
+    user_text = st.text_area(
+        "Tulis curhatan lo di sini:",
+        placeholder="Contoh: Gue pengen nonton film action luar angkasa yang banyak adegan ledakannya, tapi pahlawannya robot..."
+    )
+
+    # Input rating ordinal usulan temen lo
+    user_rating = st.slider(
+        "Kasih rating buat vibe cerita ini (1 = Ampas, 5 = Masterpiece):", 1, 5, 5)
+
+    if st.button("Cari Rekomendasi AI", type="primary"):
+        if user_text:
+            # PROSES MACHINE LEARNING BERJALAN
+
+            # A. Ubah curhatan user jadi angka koordinat matematis
+            user_vec = tfidf_vec.transform([user_text])
+
+            # B. Hitung tingkat kemiripan (Cosine Similarity) dengan semua sinopsis film
+            sim_scores = cosine_similarity(user_vec, tfidf_mat).flatten()
+
+            # C. Ambil 5 film dengan tingkat kecocokan paling tinggi
+            top_indices = sim_scores.argsort()[-5:][::-1]
+
+            st.success(
+                "Boom! Ini 5 film yang jalan ceritanya paling mirip sama curhatan lo:")
+
+            for idx in top_indices:
+                row = df_movies.iloc[idx]
+
+                # Konversi skor desimal jadi persentase kecocokan
+                kecocokan = int(sim_scores[idx] * 100)
+
+                # Modifikasi rating rekomendasi berdasarkan input user
+                # Kalau user milih rating 5, web ngasih label "Sangat Direkomendasikan"
+                if user_rating >= 4:
+                    label_rating = "🌟 Pas banget buat lo tonton!"
+                else:
+                    label_rating = "👀 Mungkin lo bakal suka, walau rating ekspektasi lo rendah."
+
+                # Render UI Hasil Pencarian
+                col_poster, col_detail = st.columns([1, 3])
+
+                with col_poster:
+                    if pd.notna(row['poster_path']):
+                        st.image(
+                            f"https://image.tmdb.org/t/p/w500{row['poster_path']}", use_container_width=True)
+                    else:
+                        st.image(
+                            "https://via.placeholder.com/500x750?text=No+Poster", use_container_width=True)
+
+                with col_detail:
+                    st.subheader(f"🎬 {row['title']}")
+                    st.write(f"**Status:** {label_rating}")
+
+                    st.metric("Tingkat Kecocokan Cerita (AI Match)",
+                              f"{kecocokan}%")
+                    st.progress(sim_scores[idx])
+
+                    st.caption("SINOPSIS")
+                    st.write(row['overview'])
+
+                st.divider()
+        else:
+            st.warning(
+                "Ketik dulu ceritanya dong bro, masa AI-nya disuruh nebak pikiran kosong!")
 
 # --- HEADER UTAMA ---
 st.title("🍿 REDa Film")
