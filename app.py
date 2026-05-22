@@ -8,16 +8,59 @@ from sklearn.metrics.pairwise import cosine_similarity
 st.set_page_config(page_title="vflix-app", layout="wide", page_icon="🍿")
 
 hide_st_style = """
-            <style>
-            #MainMenu {visibility: hidden;}
-            footer {visibility: hidden;}
-            header {visibility: hidden;}
-            .stTextArea textarea {border-radius: 10px;}
-            .stButton button {border-radius: 8px;}
-            </style>
-            """
-st.markdown(hide_st_style, unsafe_allow_html=True)
+<style>
+#MainMenu {visibility: hidden;}
+footer {visibility: hidden;}
+header {visibility: hidden;}
 
+/* SIDEBAR */
+[data-testid="stSidebar"] {
+    background: linear-gradient(180deg, #4a0404 0%, #2b0202 100%);
+    border-right: 1px solid rgba(255,255,255,0.08);
+}
+
+[data-testid="stSidebar"] > div:first-child {
+    background: linear-gradient(180deg, #4a0404 0%, #2b0202 100%);
+}
+
+/* Semua teks sidebar */
+[data-testid="stSidebar"] * {
+    color: #f5f5f5;
+}
+
+/* Input, selectbox, textarea di sidebar */
+[data-testid="stSidebar"] input,
+[data-testid="stSidebar"] textarea,
+[data-testid="stSidebar"] [data-baseweb="select"] > div {
+    background-color: #0b1020 !important;
+    color: white !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    border-radius: 10px !important;
+}
+
+/* Kotak info di sidebar */
+[data-testid="stSidebar"] .stAlert {
+    background-color: rgba(255,255,255,0.08) !important;
+    color: white !important;
+    border-radius: 12px !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+}
+
+/* Tombol umum */
+.stButton button {
+    border-radius: 8px;
+    background: linear-gradient(90deg, #8b0000, #b91c1c);
+    color: white;
+    border: none;
+}
+
+/* Text area */
+.stTextArea textarea {
+    border-radius: 10px;
+}
+</style>
+"""
+st.markdown(hide_st_style, unsafe_allow_html=True)
 
 # ==========================================
 # 2. LOAD DATA DAN MODEL (SYSTEM BACKEND)
@@ -31,6 +74,8 @@ def load_movie_data():
 def load_review_data():
     return pd.read_csv('data/reviews_final.csv', engine='python', on_bad_lines='skip')
 
+df_movies = load_movie_data()
+df_reviews = load_review_data()  # Jangan lupa inisialisasi variabelnya
 
 @st.cache_resource
 def load_ai_models():
@@ -42,7 +87,7 @@ def load_ai_models():
 # ==========================================
 # FUNGSI TRAILER (TMDB API)
 # ==========================================
-TMDB_API_KEY = "acf085605ee44ecca3febf0323d40329"  # <-- ganti ini
+TMDB_API_KEY = "acf085605ee44ecca3febf0323d40329"
 
 @st.cache_data(ttl=3600)
 def get_trailer_key(movie_id):
@@ -110,16 +155,29 @@ tfidf_vec, tfidf_mat = load_ai_models()
 # 3. HEADER UTAMA APLIKASI
 # ==========================================
 st.title("🍿 VFLIX-APP")
-st.markdown(
-    "### Platform Rekomendasi & Penjelajah Film Berbasis AI Sentiment Analysis")
+st.markdown("### Platform Rekomendasi & Penjelajah Film Berbasis Model Sentiment Analysis")
+
+with st.container():
+    st.markdown("#### 👨‍💻 Tim Pengembang")
+    col1, col2 = st.columns([2, 3])
+
+    with col1:
+        st.image("assets/image.png", use_container_width=True)
+
+    with col2:
+        st.markdown("""
+        Tim:
+        - Hanif
+        - Reda
+        - Nabilah
+        """)
 st.divider()
 
 
 # ==========================================
 # 4. IMPLEMENTASI TABS UTAMA
 # ==========================================
-tab_katalog, tab_ai = st.tabs(["Explore", "Search with AI"])
-
+tab_katalog, tab_ai, tab_insight = st.tabs(["🔎 Explore", "⚙️ Search with AI", "📊 Data Insight"])
 # ------------------------------------------
 # TAB 1: KATALOG FILM
 # ------------------------------------------
@@ -246,27 +304,24 @@ with tab_katalog:
                     st.info(
                         f"*{highlight_review['review_text']}* \n\n**AI Sentimen:** {sentimen_teks}")
 
-                # === VISUALISASI SENTIMEN REVIEW ===
-                st.markdown("**📊 Visualisasi Sentimen Review:**")
-
-                if not movie_reviews.empty:
-                    positif = movie_reviews[movie_reviews['predicted_sentiment'] == 1].shape[0]
-                    negatif = movie_reviews[movie_reviews['predicted_sentiment'] == 0].shape[0]
-
-                    sentiment_df = pd.DataFrame({
-                        "Sentimen": ["Positif", "Negatif/Mixed"],
-                        "Jumlah": [positif, negatif]
-                    })
-
-                    st.bar_chart(sentiment_df.set_index("Sentimen"))
-
-                    total_review = positif + negatif
-                    persen_positif = int((positif / total_review) * 100) if total_review > 0 else 0
-                    st.write(f"🔥 **{persen_positif}%** review untuk film ini bernada positif.")
                 else:
                     st.caption("Belum ada data sentimen review untuk divisualisasikan.")
 
                 st.divider()
+
+with tab_insight:
+    st.subheader("Data Insight")
+
+    genre_count = (
+        df_movies['genres'].dropna()
+        .str.split(',')
+        .explode()
+        .str.strip()
+        .value_counts()
+        .head(10)
+    )
+
+    st.bar_chart(genre_count)
 
 
 # ------------------------------------------
