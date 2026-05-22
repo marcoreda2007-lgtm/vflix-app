@@ -101,6 +101,18 @@ Sistem kemudian akan mencocokkan deskripsi tersebut menggunakan metode **TF-IDF*
 
 ---
 
+## 📓 Jupyter Notebook
+
+[Click here to open the notebook](https://colab.research.google.com/drive/1GOuEtwZLgqbmRGwfs17vIdhakZ56ndb-?usp=sharing)
+
+---
+
+# 🚀 Live Demo
+
+🔗 https://vflix-app.streamlit.app
+
+---
+
 # ⚙️ Installation
 
 ## 1️⃣ Clone Repository
@@ -145,8 +157,8 @@ TMDB_API_KEY=your_api_key_here
 # 📸 Application Preview
 
 <p align="center">
-  <img src="assets/preview1.png" width="900">
-    <img src="assets/preview2.png" width="900">
+  <img src="assets/preview1.png" width="45%">
+  <img src="assets/preview2.png" width="45%">
 </p>
 
 ---
