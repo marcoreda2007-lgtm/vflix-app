@@ -58,45 +58,6 @@ header {visibility: hidden;}
 .stTextArea textarea {
     border-radius: 10px;
 }
-/* FORCE DARK MODE */
-.stApp {
-    background: #0f0f0f !important;
-    color: #f5f5f7 !important;
-}
-
-[data-testid="stAppViewContainer"] {
-    background: #0f0f0f !important;
-}
-
-[data-testid="stHeader"] {
-    background: transparent !important;
-}
-
-[data-testid="stToolbar"] {
-    display: none;
-}
-
-/* Text */
-h1, h2, h3, h4, h5, h6, p, span, div, label {
-    color: #f5f5f7 !important;
-}
-
-/* Metric cards */
-[data-testid="stMetric"] {
-    background: rgba(255,255,255,0.04);
-    padding: 18px;
-    border-radius: 18px;
-    border: 1px solid rgba(255,255,255,0.08);
-}
-
-/* Tabs */
-.stTabs [data-baseweb="tab-list"] {
-    border-bottom: 1px solid rgba(255,255,255,0.1);
-}
-
-.stTabs [data-baseweb="tab"] {
-    color: #a1a1aa !important;
-}
 
 </style>
 """
@@ -383,55 +344,67 @@ with tab_ai:
     )
 
     user_rating = st.slider(
-        "Set target ekspektasi rating cerita lo (1 = Biasa Saja, 5 = Masterpiece):", 1, 5, 5)
+        "Set target ekspektasi rating cerita lo (1 = Biasa Saja, 5 = Masterpiece):", 1, 5, 5
+    )
 
-    if st.button("Analisis Teks & Cari Rekomendasi AI", type="primary"):
+    if st.button("Analisis Teks & Cari Rekomendasi AI", type="primary", key="btn_rekom_ai"):
         if user_text:
             user_vec = tfidf_vec.transform([user_text])
             sim_scores = cosine_similarity(user_vec, tfidf_mat).flatten()
             top_indices = sim_scores.argsort()[-5:][::-1]
 
-            st.success("Ini 5 rekomendasi teratas yang paling sesuai sama yang kamu cari:")
-            st.divider()
-
-            for idx in top_indices:
-                row = df_movies.iloc[idx]
-                kecocokan = int(sim_scores[idx] * 100)
-
-                if user_rating >= 4:
-                    label_rating = "🌟 Plot cerita berbobot tinggi, sangat pas dengan seleramu!"
-                else:
-                    label_rating = "👀 Alur cerita ringan, cocok buat hiburan santai tanpa mikir keras."
-
-                col_poster, col_detail = st.columns([1, 4])
-
-                with col_poster:
-                    if pd.notna(row['poster_path']):
-                        st.image(
-                            f"https://image.tmdb.org/t/p/w500{row['poster_path']}", use_container_width=True)
-                    else:
-                        st.image(
-                            "https://via.placeholder.com/500x750?text=No+Poster", use_container_width=True)
-
-                with col_detail:
-                    st.subheader(f"🎬 {row['title']}")
-
-                    if pd.notna(row['genres']):
-                        clean_genres = row['genres'].replace(',', '  |  ')
-                        st.markdown(f"🏷️ *{clean_genres}*")
-
-                    st.write(f"**Analisis Relevansi:** {label_rating}")
-                    st.metric("Tingkat Kemiripan Cerita (AI Match)", f"{kecocokan}%")
-                    st.progress(sim_scores[idx])
-
-                    st.markdown("**Sinopsis Singkat:**")
-                    st.write(row['overview'])
-
-                    # === TRAILER SECTION ===
-                    st.markdown("**🎬 Trailer Film:**")
-                    render_trailer_section(row['id'], unique_key=f"ai_{idx}")
-
-                st.divider()
+            # simpan di session_state
+            st.session_state["ai_top_indices"] = top_indices
+            st.session_state["ai_sim_scores"] = sim_scores
+            st.session_state["ai_user_rating"] = user_rating
         else:
-            st.warning(
-                "Kolom ini tidak bisa kosong ya! Coba tulis sedikit cerita atau suasana film yang kamu inginkan, biar AI bisa bantu cariin rekomendasi yang pas buat kamu!")
+            st.warning("Kolom ini tidak bisa kosong ya!")
+    
+    # render rekomendasi kalau sudah ada di session_state
+    if "ai_top_indices" in st.session_state:
+        top_indices = st.session_state["ai_top_indices"]
+        sim_scores = st.session_state["ai_sim_scores"]
+        user_rating = st.session_state["ai_user_rating"]
+
+        st.success("Ini 5 rekomendasi teratas yang paling sesuai sama yang kamu cari:")
+        st.divider()
+
+        for idx in top_indices:
+            row = df_movies.iloc[idx]
+            kecocokan = int(sim_scores[idx] * 100)
+
+            if user_rating >= 4:
+                label_rating = "🌟 Plot cerita berbobot tinggi, sangat pas dengan seleramu!"
+            else:
+                label_rating = "👀 Alur cerita ringan, cocok buat hiburan santai tanpa mikir keras."
+
+            col_poster, col_detail = st.columns([1, 4])
+
+            with col_poster:
+                if pd.notna(row['poster_path']):
+                    st.image(
+                        f"https://image.tmdb.org/t/p/w500{row['poster_path']}", use_container_width=True
+                    )
+                else:
+                    st.image(
+                        "https://via.placeholder.com/500x750?text=No+Poster", use_container_width=True
+                    )
+
+            with col_detail:
+                st.subheader(f"🎬 {row['title']}")
+
+                if pd.notna(row['genres']):
+                    clean_genres = row['genres'].replace(',', '  |  ')
+                    st.markdown(f"🏷️ *{clean_genres}*")
+
+                st.write(f"**Analisis Relevansi:** {label_rating}")
+                st.metric("Tingkat Kemiripan Cerita (AI Match)", f"{kecocokan}%")
+                st.progress(sim_scores[idx])
+
+                st.markdown("**Sinopsis Singkat:**")
+                st.write(row['overview'])
+
+                st.markdown("**🎬 Trailer Film:**")
+                render_trailer_section(row['id'], unique_key=f"ai_trailer_{idx}")
+
+            st.divider()
