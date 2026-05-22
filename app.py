@@ -58,6 +58,46 @@ header {visibility: hidden;}
 .stTextArea textarea {
     border-radius: 10px;
 }
+/* FORCE DARK MODE */
+.stApp {
+    background: #0f0f0f !important;
+    color: #f5f5f7 !important;
+}
+
+[data-testid="stAppViewContainer"] {
+    background: #0f0f0f !important;
+}
+
+[data-testid="stHeader"] {
+    background: transparent !important;
+}
+
+[data-testid="stToolbar"] {
+    display: none;
+}
+
+/* Text */
+h1, h2, h3, h4, h5, h6, p, span, div, label {
+    color: #f5f5f7 !important;
+}
+
+/* Metric cards */
+[data-testid="stMetric"] {
+    background: rgba(255,255,255,0.04);
+    padding: 18px;
+    border-radius: 18px;
+    border: 1px solid rgba(255,255,255,0.08);
+}
+
+/* Tabs */
+.stTabs [data-baseweb="tab-list"] {
+    border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+
+.stTabs [data-baseweb="tab"] {
+    color: #a1a1aa !important;
+}
+
 </style>
 """
 st.markdown(hide_st_style, unsafe_allow_html=True)
