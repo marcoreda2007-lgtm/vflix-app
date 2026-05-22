@@ -1,78 +1,175 @@
-# 🍿 VFLIX-APP
+# 🍿 VFLIX-APP  
+### AI-Based Movie Recommendation Platform
 
-![VFLIX Preview](assets/image.png)
+<p align="center">
+  <img src="assets/image.png" alt="VFLIX Banner" width="850"/>
+</p>
 
-Platform rekomendasi film berbasis AI menggunakan NLP dan Sentiment Analysis.
-
-**VFLIX-APP** adalah aplikasi web interaktif yang membantu pengguna menjelajahi dunia perfilman melalui lensa data. Menggunakan teknik **Natural Language Processing (NLP)** dan **Sentiment Analysis**, aplikasi ini memberikan rekomendasi cerdas berdasarkan nuansa (*vibe*) atau alur cerita yang diinginkan pengguna.
-
----
-
-## 🚀 Fitur Utama
-
-* **🔎 Explore & Filter:** Menjelajahi katalog film dengan filter genre, pencarian judul, dan pengurutan berdasarkan sentimen penonton.
-* **⚙️ Search with AI (Vibe-Based):** Fitur unggulan menggunakan model **TF-IDF** dan **Cosine Similarity**. Pengguna cukup menceritakan suasana film yang dicari, dan AI akan mencarikan kecocokan alur cerita.
-* **🎥 Smart Trailer Integration:** Integrasi dengan **TMDB API** untuk memutar trailer YouTube langsung di dalam aplikasi.
-* **📊 Data Insight:** Visualisasi distribusi genre film untuk memberikan gambaran tren industri film.
+<p align="center">
+  <img src="https://img.shields.io/badge/Python-3.10-blue?logo=python">
+  <img src="https://img.shields.io/badge/Framework-Streamlit-red?logo=streamlit">
+  <img src="https://img.shields.io/badge/Machine%20Learning-Scikit--Learn-orange?logo=scikitlearn">
+  <img src="https://img.shields.io/badge/API-TMDB-green">
+  <img src="https://img.shields.io/badge/Status-Active-success">
+</p>
 
 ---
 
-## 🛠️ Tech Stack
+## 📖 About The Project
 
-Aplikasi ini dibangun menggunakan ekosistem Python yang modern:
-* **Frontend:** [Streamlit](https://streamlit.io/)
-* **Data Processing:** [Pandas](https://pandas.pydata.org/) & [NumPy](https://numpy.org/)
-* **Machine Learning:** [Scikit-learn](https://scikit-learn.org/) (Model TF-IDF & Cosine Similarity)
-* **External API:** [TMDB API](https://www.themoviedb.org/) untuk metadata film dan video trailer.
+**VFLIX-APP** adalah platform rekomendasi film berbasis Artificial Intelligence yang dirancang untuk membantu pengguna menemukan film sesuai dengan *vibe*, suasana, atau alur cerita yang diinginkan.
+
+Aplikasi ini memanfaatkan teknologi **Natural Language Processing (NLP)** dan **Sentiment Analysis** untuk menghasilkan rekomendasi yang lebih personal dan relevan. Pengguna dapat mencari film menggunakan deskripsi bebas seperti:
+
+> *"film sedih tentang persahabatan dan kehilangan"*  
+> *"film sci-fi dengan plot mind blowing"*
+
+Sistem kemudian akan mencocokkan deskripsi tersebut menggunakan metode **TF-IDF** dan **Cosine Similarity**.
 
 ---
 
-## 📂 Struktur Direktori
+# ✨ Features
 
-```text
-.
-├── data/               # Dataset film dan review
-├── models/             # Pickle file untuk model AI (tfidf_vectorizer, matrix)
-├── app.py              # File utama aplikasi Streamlit
-└── requirements.txt    # Daftar dependensi library
+## 🔎 Explore & Filter
+- Menjelajahi katalog film interaktif
+- Filter berdasarkan genre
+- Search judul film
+- Sorting berdasarkan sentiment score
 
+## ⚙️ AI Recommendation System
+- Rekomendasi berbasis deskripsi teks (*vibe-based search*)
+- Menggunakan:
+  - TF-IDF Vectorization
+  - Cosine Similarity
+  - NLP preprocessing
+
+## 🎥 Smart Trailer Integration
+- Integrasi dengan **TMDB API**
+- Menampilkan trailer YouTube langsung di aplikasi
+
+## 📊 Data Visualization
+- Visualisasi distribusi genre film
+- Insight sederhana mengenai tren perfilman
+
+---
+
+# 🛠️ Tech Stack
+
+| Category | Technology |
+|---|---|
+| Frontend | Streamlit |
+| Backend | Python |
+| Data Processing | Pandas |
+| Machine Learning | Scikit-learn |
+| NLP | TF-IDF |
+| Model Persistence | Joblib |
+| API Integration | TMDB API |
+
+---
+
+# 📂 Project Structure
+
+```plaintext
+├── .devcontainer/              # Konfigurasi container development
+│   └── devcontainer.json       # Pengaturan environment VS Code Dev Container
+
+├── .streamlit/                 # Konfigurasi Streamlit
+│   └── config.toml             # Pengaturan tampilan & server Streamlit
+
+├── assets/                     # Folder asset/gambar pendukung
+│   └── image.png               # Preview atau banner aplikasi
+
+├── data/                       # Dataset utama aplikasi
+│   ├── cast.csv                # Data pemeran film
+│   ├── crew.csv                # Data kru film
+│   ├── genres.csv              # Data genre film
+│   ├── movies.csv              # Dataset film mentah
+│   ├── movies_scored_final.csv # Dataset film hasil scoring/sentiment
+│   ├── reviews.csv             # Dataset review mentah
+│   └── reviews_final.csv       # Dataset review hasil preprocessing
+
+├── models/                     # Model Machine Learning tersimpan
+│   ├── sentiment_model.pkl     # Model analisis sentimen
+│   ├── tfidf_matrix.pkl        # Matrix TF-IDF hasil training
+│   ├── tfidf_rekomendasi.pkl   # Model rekomendasi berbasis TF-IDF
+│   └── tfidf_vectorizer.pkl    # TF-IDF Vectorizer
+
+├── app.py                      # File utama aplikasi Streamlit
+├── README.md                   # Dokumentasi proyek
+└── requirements.txt            # Daftar dependensi Python
 ```
 
 ---
 
-## ⚙️ Cara Menjalankan Aplikasi
+# ⚙️ Installation
 
-1. **Clone Repositori**
+## 1️⃣ Clone Repository
+
 ```bash
-git clone [https://github.com/username/vflix-app.git](https://github.com/username/vflix-app.git)
+git clone https://github.com/username/vflix-app.git
 cd vflix-app
-
 ```
 
+---
 
-2. **Instal Dependensi**
+## 2️⃣ Install Dependencies
+
+Pastikan Python sudah terinstall.
+
 ```bash
 pip install -r requirements.txt
-
 ```
-
-
-3. **Jalankan Aplikasi**
-```bash
-streamlit run app.py
-
-```
-
-
 
 ---
 
-## 👨‍💻 Tim Pengembang
+## 3️⃣ Run The Application
 
-Proyek ini dikembangkan oleh:
+```bash
+streamlit run app.py
+```
 
-* **Hanif**
-* **Reda**
-* **Nabilah**
+---
+
+# 🔑 Environment Variables
+
+Aplikasi membutuhkan API Key dari TMDB.
+
+Buat file `.env` lalu tambahkan:
+
+```env
+TMDB_API_KEY=your_api_key_here
+```
+
+---
+
+# 📸 Application Preview
+
+<p align="center">
+  <img src="assets/image.png" width="900">
+</p>
+
+---
+
+# 👨‍💻 Developer Team
+
+| Name |
+|---|
+| Hanif |
+| Reda |
+| Nabilah |
+
+---
+
+# 📌 Notes
+
+- Pastikan `TMDB_API_KEY` aktif agar fitur trailer berjalan normal.
+- Direkomendasikan menggunakan Python 3.10+.
+- Dataset yang digunakan telah melalui proses preprocessing dan sentiment scoring.
+
+---
+
+# ⭐ Support
+
+Jika project ini membantu, jangan lupa kasih ⭐ di repository GitHub ya!
 
 ---
