@@ -21,8 +21,8 @@
 
 Aplikasi ini memanfaatkan teknologi **Natural Language Processing (NLP)** dan **Sentiment Analysis** untuk menghasilkan rekomendasi yang lebih personal dan relevan. Pengguna dapat mencari film menggunakan deskripsi bebas seperti:
 
-> *"film sedih tentang persahabatan dan kehilangan"*  
-> *"film sci-fi dengan plot mind blowing"*
+> *"good superman film"*  
+> *"amazing scifi film"*
 
 Sistem kemudian akan mencocokkan deskripsi tersebut menggunakan metode **TF-IDF** dan **Cosine Similarity**.
 
@@ -145,7 +145,8 @@ TMDB_API_KEY=your_api_key_here
 # 📸 Application Preview
 
 <p align="center">
-  <img src="assets/image.png" width="900">
+  <img src="assets/preview1.png" width="900">
+    <img src="assets/preview2.png" width="900">
 </p>
 
 ---
