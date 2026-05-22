@@ -155,6 +155,11 @@ tfidf_vec, tfidf_mat = load_ai_models()
 # 3. HEADER UTAMA APLIKASI
 # ==========================================
 st.title("🍿 VFLIX-APP")
+c1, c2, c3 = st.columns(3)
+
+c1.metric("🎬 Total Movies", "3752")
+c2.metric("⭐ Avg Sentiment", "86%")
+c3.metric("🧠 AI Powered", "TF-IDF + NLP")
 st.markdown("### Platform Rekomendasi & Penjelajah Film Berbasis Model Sentiment Analysis")
 
 with st.container():
