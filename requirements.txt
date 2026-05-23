@@ -3,4 +3,3 @@ pandas
 scikit-learn
 joblib
 python-dotenv
-pip freeze > requirements.txt
