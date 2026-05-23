@@ -118,7 +118,7 @@ Sistem kemudian akan mencocokkan deskripsi tersebut menggunakan metode **TF-IDF*
 ## 1️⃣ Clone Repository
 
 ```bash
-git clone https://github.com/username/vflix-app.git
+git clone https://github.com/marcoreda2007-lgtm/vflix-app.git
 cd vflix-app
 ```
 
