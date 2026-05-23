@@ -90,7 +90,9 @@ def load_ai_models():
 # ==========================================
 # FUNGSI TRAILER (TMDB API)
 # ==========================================
-TMDB_API_KEY = os.getenv("TMDB_API_KEY")
+TMDB_API_KEY = "acf085605ee44ecca3febf0323d40329" #biar gampang ajh... kpn2 pakek env
+#kalo pakek env
+#TMDB_API_KEY = os.getenv("TMDB_API_KEY")
 
 @st.cache_data(ttl=3600)
 def get_trailer_key(movie_id):
@@ -146,6 +148,7 @@ def render_trailer_section(movie_id, unique_key):
             st.markdown(embed_html, unsafe_allow_html=True)
         else:
             st.warning("Trailer tidak tersedia untuk film ini.")
+
 
 # Inisialisasi data dan model
 df_movies = load_movie_data()
