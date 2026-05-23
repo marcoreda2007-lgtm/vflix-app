@@ -15,6 +15,11 @@ hide_st_style = """
 footer {visibility: hidden;}
 header {visibility: hidden;}
 
+/* Tombol reopen sidebar tetap terlihat walau header disembunyikan */
+[data-testid="collapsedControl"] {
+    visibility: visible !important;
+}
+
 /* SIDEBAR */
 [data-testid="stSidebar"] {
     background: linear-gradient(180deg, #4a0404 0%, #2b0202 100%);
