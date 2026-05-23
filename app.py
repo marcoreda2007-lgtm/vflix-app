@@ -3,7 +3,9 @@ import pandas as pd
 import joblib
 import requests
 from sklearn.metrics.pairwise import cosine_similarity
-
+import os
+from dotenv import load_dotenv
+                                  
 # 1. SETTING HALAMAN & STYLE PREMIUM
 st.set_page_config(page_title="vflix-app", layout="wide", page_icon="🍿")
 
@@ -88,7 +90,7 @@ def load_ai_models():
 # ==========================================
 # FUNGSI TRAILER (TMDB API)
 # ==========================================
-TMDB_API_KEY = "acf085605ee44ecca3febf0323d40329"
+TMDB_API_KEY = os.getenv("TMDB_API_KEY")
 
 @st.cache_data(ttl=3600)
 def get_trailer_key(movie_id):
@@ -145,12 +147,16 @@ def render_trailer_section(movie_id, unique_key):
         else:
             st.warning("Trailer tidak tersedia untuk film ini.")
 
+# ==========================================
+# FUNGSI DISCUSS WITH AI (GEMINI FREE API)
+# ==========================================
 
 # Inisialisasi data dan model
 df_movies = load_movie_data()
 df_reviews = load_review_data()
 tfidf_vec, tfidf_mat = load_ai_models()
 
+load_dotenv()
 
 # ==========================================
 # 3. HEADER UTAMA APLIKASI
@@ -161,8 +167,7 @@ c1, c2, c3 = st.columns(3)
 c1.metric("🎬 Total Movies", "3752")
 c2.metric("⭐ Avg Sentiment", "86%")
 c3.metric("🧠 AI Powered", "TF-IDF + NLP")
-st.divider()
-st.markdown("## Platform Rekomendasi & Penjelajah Film Berbasis Model Sentiment Analysis")
+st.markdown("### Platform Rekomendasi & Penjelajah Film Berbasis Model Sentiment Analysis")
 
 with st.container():
     st.markdown("#### 👨‍💻 Tim Pengembang")
