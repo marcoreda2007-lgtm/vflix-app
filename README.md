@@ -53,6 +53,72 @@ Sistem kemudian akan mencocokkan deskripsi tersebut menggunakan metode **TF-IDF*
 
 ---
 
+# 📑 Cara Kerja
+
+## 1. 📲 Startup & Inisialisasi
+Saat aplikasi pertama kali dijalankan, Streamlit menjalankan seluruh app.py dari atas ke bawah. 
+Ada tiga pemanggilan @st.cache / @st.cache_resource yang hanya dieksekusi sekali lalu disimpan di memori:
+- load_movie_data() digunakan untuk membaca data/movies_scored_final.csv
+- load_review_data() digunakan untuk membaca data/reviews_final.csv
+- load_ai_models() digunakan untuk memuat dua file model dari folder models/: tfidf_rekomendasi.pkl (vectorizer) dan tfidf_matrix.pkl (matrix TF-IDF yang sudah diproses sebelumnya)
+Setelah cache diisi, semua tab langsung menggunakan data yang sama dari memori tanpa membaca ulang dari disk.
+
+## 2. 📧 Page Config & Header
+st.set_page_config mengatur judul tab browser, layout wide, dan ikon. 
+Kemudian CSS kustom diintegrasikan melalui st.markdown(..., unsafe_allow_html=True) untuk menyembunyikan menu bawaan Streamlit dan memberi tampilan sidebar merah gelap khas VFLIX.
+Header menampilkan tiga metrik statis hardcoded (3752 film, 86% avg sentiment, TF-IDF + NLP) dan informasi tim pengembang beserta gambar dari assets/image.png.
+
+## 3. Tab 1 — Explore (Katalog Film)
+### Sidebar filter menyediakan empat kontrol input:
+- Text input untuk pencarian judul (case-insensitive str.contains)
+- Selectbox genre — genre diambil dinamis dengan memecah kolom genres yang dipisah koma, lalu dikumpulkan ke dalam set unik
+- Selectbox urutan (tertinggi/terburuk berdasarkan avg_predicted_sentiment)
+- Number input halaman
+
+### Pipeline filter berjalan setiap kali user mengubah input:
+- Drop baris yang avg_predicted_sentiment-nya null
+- Filter judul jika ada query
+- Filter genre jika bukan "Semua Genre"
+- Sort berdasarkan pilihan
+- Potong menggunakan slice iloc[start:end] untuk pagination 15 item/halaman
+
+### Render kartu film dilakukan dalam loop for index, row in page_df.iterrows(). Setiap film menampilkan:
+- Poster dari TMDB image CDN (https://image.tmdb.org/t/p/w500{poster_path})
+- Skor sentimen dalam persen + progress bar + label vibe (4 kategori: ≥90%, ≥75%, ≥50%, sisanya)
+- Sinopsis (overview)
+- Trailer → memanggil render_trailer_section()
+- Highlight review → filter df_reviews berdasarkan movie_id dan ambil baris pertama
+
+## 4. Tab 2 — Search with AI
+Cara kerja dari fitur rekomendasi berbasis NLP:
+- User mengetik deskripsi bebas seperti plot, suasana, dan genre di st.text_area
+- User menggeser slider rating ekspektasi (1–5)
+- Saat tombol ditekan, teks user di-transform menggunakan tfidf_vec.transform([user_text]) untuk menghasilkan vektor sparse
+- Vektor ini dibandingkan dengan tfidf_mat (matrix semua film) menggunakan cosine similarity
+- Diambil 5 indeks dengan skor tertinggi via argsort()[-5:][::-1]
+- Hasil disimpan ke st.session_state agar tidak hilang saat Streamlit re-run
+- Render 5 kartu film dengan poster, skor kemiripan (%), progress bar, sinopsis, dan trailer
+
+## 5. Fungsi Shared dengan render_trailer_section()
+Fungsi ini dipakai oleh Tab 1 dan Tab 2. Cara kerjanya:
+- Membuat key unik di st.session_state per film, misalnya show_trailer_katalog_42
+- Tombol toggle mengubah state antara True/False
+- Jika state True, baru memanggil get_trailer_key(movie_id)
+- get_trailer_key() memanggil TMDB API endpoint /movie/{id}/videos, mencari item dengan type == "Trailer" dan site == "YouTube", lalu mengembalikan YouTube video key-nya
+- Embed YouTube dirender via st.markdown dengan <iframe>
+
+## 6. Tab 3 — Data Insight
+Cara kerja dari fitur Data Insight yaitu:
+- Mengambil kolom genres
+- Memecah setiap nilai dengan str.split(',')
+- Meratakan dengan .explode()
+- Membersihkan spasi
+- Menghitung frekuensi dengan .value_counts()
+- Mengambil 10 teratas
+- Lalu render dengan st.bar_chart()
+
+---
+
 # 🛠️ Tech Stack
 
 | Category | Technology |
