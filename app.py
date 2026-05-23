@@ -147,10 +147,6 @@ def render_trailer_section(movie_id, unique_key):
         else:
             st.warning("Trailer tidak tersedia untuk film ini.")
 
-# ==========================================
-# FUNGSI DISCUSS WITH AI (GEMINI FREE API)
-# ==========================================
-
 # Inisialisasi data dan model
 df_movies = load_movie_data()
 df_reviews = load_review_data()
