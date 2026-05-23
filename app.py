@@ -15,6 +15,11 @@ hide_st_style = """
 footer {visibility: hidden;}
 header {visibility: hidden;}
 
+/* Tombol reopen sidebar tetap terlihat walau header disembunyikan */
+[data-testid="collapsedControl"] {
+    visibility: visible !important;
+}
+
 /* SIDEBAR */
 [data-testid="stSidebar"] {
     background: linear-gradient(180deg, #4a0404 0%, #2b0202 100%);
@@ -188,7 +193,7 @@ st.divider()
 # ==========================================
 # 4. IMPLEMENTASI TABS UTAMA
 # ==========================================
-tab_katalog, tab_ai, tab_insight = st.tabs(["🔎 Explore", "⚙️ Search with AI", "📊 Data Insight"])
+tab_katalog, tab_ai, tab_insight, tab_tren = st.tabs(["🔎 Explore", "⚙️ Search with AI", "📊 Data Insight", "🏆 Tren Film"])
 # ------------------------------------------
 # TAB 1: KATALOG FILM
 # ------------------------------------------
@@ -320,21 +325,6 @@ with tab_katalog:
 
                 st.divider()
 
-with tab_insight:
-    st.subheader("Data Insight")
-
-    genre_count = (
-        df_movies['genres'].dropna()
-        .str.split(',')
-        .explode()
-        .str.strip()
-        .value_counts()
-        .head(10)
-    )
-
-    st.bar_chart(genre_count)
-
-
 # ------------------------------------------
 # TAB 2: AI RECOMMENDER
 # ------------------------------------------
@@ -413,3 +403,215 @@ with tab_ai:
                 render_trailer_section(row['id'], unique_key=f"ai_trailer_{idx}")
 
             st.divider()
+
+# ------------------------------------------
+# TAB 3: Data Insight
+# ------------------------------------------
+with tab_insight:
+    st.subheader("Data Insight")
+
+    genre_count = (
+        df_movies['genres'].dropna()
+        .str.split(',')
+        .explode()
+        .str.strip()
+        .value_counts()
+        .head(10)
+    )
+
+    st.bar_chart(genre_count)
+
+# ------------------------------------------
+# TAB 4: TREN FILM
+# ------------------------------------------
+with tab_tren:
+
+    # Ekstrak kolom year dari release_date kalau belum ada
+    if 'year' not in df_movies.columns:
+        df_movies['year'] = pd.to_datetime(
+            df_movies.get('release_date', pd.Series(dtype=str)),
+            errors='coerce'
+        ).dt.year
+
+    available_years = sorted(
+        df_movies['year'].dropna().astype(int).unique().tolist()
+    )
+
+    # Init session state tahun
+    if 'tren_year' not in st.session_state:
+        st.session_state['tren_year'] = 2025 if 2025 in available_years else (available_years[-1] if available_years else 2025)
+
+    current_year = int(st.session_state['tren_year'])
+
+    # ---- Helper ----
+    BASE_IMG  = "https://image.tmdb.org/t/p/w500"
+    NO_POSTER = "https://via.placeholder.com/500x750?text=No+Poster"
+
+    def poster_url(row):
+        return f"{BASE_IMG}{row['poster_path']}" if pd.notna(row.get('poster_path')) else NO_POSTER
+
+    # ---- Ambil top 5 tahun ini ----
+    year_df = df_movies[df_movies['year'] == current_year].dropna(subset=['avg_predicted_sentiment'])
+    top5 = (
+        year_df
+        .sort_values(by=['avg_predicted_sentiment', 'num_reviews_analyzed'], ascending=[False, False])
+        .head(5)
+        .reset_index(drop=True)
+    )
+
+    # ======================================================
+    # CONTAINER UTAMA — border merah
+    # ======================================================
+    st.markdown(
+        '<div style="border:2.5px solid #b91c1c; border-radius:18px; padding:28px 24px 24px 24px;">',
+        unsafe_allow_html=True
+    )
+
+    st.markdown("### 🔥 Tren Film Teratas")
+
+    # ---- Fan / Arc Display ----
+    # Urutan tampil di layar: [idx3, idx1, idx0, idx2, idx4]
+    # yaitu: TOP4 | TOP2 | TOP1(tengah) | TOP3 | TOP5
+    display_order = [3, 1, 0, 2, 4]
+    rank_labels   = ["TOP 4", "TOP 2", "TOP 1", "TOP 3", "TOP 5"]
+    img_widths    = ["95px", "135px", "185px", "135px", "95px"]   # makin tengah makin besar
+    arc_padding   = [0, 55, 110, 55, 0]                           # padding-bottom bikin efek arc
+
+    cards_html = """
+    <div style="
+        display:flex;
+        align-items:flex-end;
+        justify-content:center;
+        gap:14px;
+        padding:20px 0 10px 0;
+    ">
+    """
+
+    for slot_idx, (film_idx, rank, w, pb) in enumerate(
+        zip(display_order, rank_labels, img_widths, arc_padding)
+    ):
+        is_center = (slot_idx == 2)
+
+        if film_idx < len(top5):
+            row   = top5.iloc[film_idx]
+            img   = poster_url(row)
+            title = row['title']
+            score = int(row['avg_predicted_sentiment'] * 100)
+
+            # Potong judul kalau terlalu panjang
+            short_title = (title[:18] + "…") if len(title) > 18 else title
+
+            rank_color   = "#e53e3e" if is_center else "#b91c1c"
+            rank_size    = "15px"    if is_center else "12px"
+            title_size   = "13px"    if is_center else "11px"
+            score_size   = "12px"    if is_center else "10px"
+            shadow       = "0 6px 24px rgba(0,0,0,0.45)" if is_center else "0 3px 12px rgba(0,0,0,0.25)"
+            radius       = "12px"    if is_center else "8px"
+
+            cards_html += f"""
+            <div style="
+                display:flex;
+                flex-direction:column;
+                align-items:center;
+                padding-bottom:{pb}px;
+                flex:0 0 auto;
+            ">
+                <img src="{img}"
+                     style="
+                         width:{w};
+                         border-radius:{radius};
+                         box-shadow:{shadow};
+                         display:block;
+                     ">
+                <div style="margin-top:10px; text-align:center; max-width:{w};">
+                    <div style="
+                        font-weight:700;
+                        font-size:{rank_size};
+                        color:{rank_color};
+                        letter-spacing:0.5px;
+                    ">{rank}</div>
+                    <div style="
+                        font-size:{title_size};
+                        color:#f0f0f0;
+                        line-height:1.35;
+                        margin-top:3px;
+                    ">{short_title}</div>
+                    <div style="
+                        font-size:{score_size};
+                        color:#a0a0a0;
+                        margin-top:3px;
+                    ">⭐ {score}%</div>
+                </div>
+            </div>
+            """
+        else:
+            # Slot kosong kalau film < 5
+            cards_html += f'<div style="flex:0 0 auto; width:{w}; padding-bottom:{pb}px;"></div>'
+
+    cards_html += "</div>"
+    st.markdown(cards_html, unsafe_allow_html=True)
+
+    # ---- Divider & Navigasi Tahun ----
+    st.markdown(
+        '<hr style="border:none; border-top:1px solid rgba(180,0,0,0.35); margin:18px 0 14px 0;">',
+        unsafe_allow_html=True
+    )
+
+    col_prev, col_cur, col_next = st.columns([1, 2, 1])
+
+    prev_year = current_year - 1
+    next_year = current_year + 1
+
+    with col_prev:
+        st.markdown("<div style='text-align:right;'>", unsafe_allow_html=True)
+        if prev_year in available_years:
+            if st.button(f"◀  {prev_year}", key="tren_prev", use_container_width=True):
+                st.session_state['tren_year'] = prev_year
+                st.rerun()
+        st.markdown("</div>", unsafe_allow_html=True)
+
+    with col_cur:
+        st.markdown(
+            f"""
+            <div style="
+                text-align:center;
+                font-size:30px;
+                font-weight:800;
+                border:2.5px solid #b91c1c;
+                border-radius:12px;
+                padding:6px 0;
+                color:#f0f0f0;
+                letter-spacing:2px;
+            ">{current_year}</div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    with col_next:
+        if next_year in available_years:
+            if st.button(f"{next_year}  ▶", key="tren_next", use_container_width=True):
+                st.session_state['tren_year'] = next_year
+                st.rerun()
+
+    # Tutup border merah
+    st.markdown("</div>", unsafe_allow_html=True)
+
+    # ---- Detail list di bawah border ----
+    st.markdown(f"#### 📋 Detail Top 5 Film Tahun {current_year}")
+
+    if top5.empty:
+        st.warning(f"Tidak ada data film untuk tahun {current_year}.")
+    else:
+        for idx, row in top5.iterrows():
+            score_pct = int(row['avg_predicted_sentiment'] * 100)
+            with st.expander(f"#{idx + 1}  —  {row['title']}  |  ⭐ {score_pct}%"):
+                col_p, col_d = st.columns([1, 3])
+                with col_p:
+                    st.image(poster_url(row), use_container_width=True)
+                with col_d:
+                    if pd.notna(row.get('genres')):
+                        st.markdown(f"🏷️ *{row['genres'].replace(',', '  |  ')}*")
+                    st.metric("Community Score", f"{score_pct}%")
+                    st.progress(row['avg_predicted_sentiment'])
+                    st.write(row.get('overview', '-'))
+                    render_trailer_section(row['id'], unique_key=f"tren_{current_year}_{idx}")
